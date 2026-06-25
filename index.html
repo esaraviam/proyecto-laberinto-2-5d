@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laberinto 2.5D con Minimapa - Estilo Retro</title>
+    <style>
+        body {
+            background-color: #111;
+            color: #eee;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            margin-bottom: 5px;
+            color: #00ff00;
+            text-shadow: 0 0 5px #00ff00;
+            font-size: 1.8rem;
+        }
+        p {
+            margin: 5px 0 20px 0;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+        #canvas-container {
+            position: relative;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+            border: 4px solid #333;
+            background: #000;
+        }
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+        }
+        #separator {
+            position: absolute;
+            left: 640px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(to bottom, transparent, #00ff00, transparent);
+            pointer-events: none;
+        }
+        .controles {
+            margin-top: 20px;
+            background-color: #222;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #444;
+            max-width: 500px;
+            text-align: center;
+        }
+        .tecla {
+            background: #444;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #fff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>LABERINTO RETRO 2.5D + MINIMAPA</h1>
+    <p>Vista Dual: Renderizado de Rayos (Izquierda) e Inspección de Matriz 2D (Derecha)</p>
+
+    <div id="canvas-container">
+        <canvas id="pantallaDoom" width="960" height="480"></canvas>
+        <div id="separator"></div>
+    </div>
+
+    <div class="controles">
+        <strong>CONTROLES:</strong><br>
+        Moverse: <span class="tecla">▲</span> <span class="tecla">▼</span> &nbsp;|&nbsp;
+        Rotar: <span class="tecla">◄</span> <span class="tecla">►</span> &nbsp;|&nbsp;
+        Disparar: <span class="tecla">ESPACIO</span> &nbsp;|&nbsp;
+        Nuevo mapa: <span class="tecla">R</span>
+    </div>
+
+    <script src="motor.js"></script>
+</body>
+</html>
