@@ -1,0 +1,26 @@
+{
+  "id": "task_14",
+  "spec": "refactor-and-best-practices",
+  "title": "Crear src/enemies.js \u2014 IA de enemigos: patrulla, persecuci\u00f3n, ataque",
+  "skill": "backend-coder",
+  "model_hint": "sonnet",
+  "status": "completed",
+  "depends_on": [
+    "task_06",
+    "task_07",
+    "task_10"
+  ],
+  "read_architecture_section": "documentation/api/api_refactor-and-best-practices.md#M\u00f3dulo: `src/enemies.js`",
+  "file_scope": [
+    "src/enemies.js"
+  ],
+  "acceptance_criteria": [
+    "El archivo src/enemies.js existe e importa las constantes necesarias de './constants.js', { state } de './state.js', y las funciones de audio necesarias de './audio.js'",
+    "Exporta: esLineaLibre(x1,y1,x2,y2), elegirSiguienteCelda(e), actualizarEnemigos(), reaparecerEnemigos(n)",
+    "actualizarEnemigos() itera state.enemigos; l\u00f3gica de chase/patrol/ataque id\u00e9ntica a motor.js",
+    "reaparecerEnemigos(n) usa Math.min(n, libres.length) para acotar el spawn (constraint de seguridad)",
+    "actualizarEnemigos() llama playDamage() al da\u00f1ar al jugador; setea state.gameOver si playerHP <= 0",
+    "No contiene `'use strict'` ni IIFE",
+    "`node --check src/enemies.js` sale con c\u00f3digo 0"
+  ]
+}

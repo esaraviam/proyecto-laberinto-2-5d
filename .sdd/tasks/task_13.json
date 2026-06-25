@@ -1,0 +1,26 @@
+{
+  "id": "task_13",
+  "spec": "refactor-and-best-practices",
+  "title": "Crear src/player.js \u2014 movimiento del jugador y colisi\u00f3n",
+  "skill": "backend-coder",
+  "model_hint": "sonnet",
+  "status": "completed",
+  "depends_on": [
+    "task_06",
+    "task_08",
+    "task_10"
+  ],
+  "read_architecture_section": "documentation/api/api_refactor-and-best-practices.md#M\u00f3dulo: `src/player.js`",
+  "file_scope": [
+    "src/player.js"
+  ],
+  "acceptance_criteria": [
+    "El archivo src/player.js existe e importa las constantes necesarias de './constants.js', { state } de './state.js', { teclasPresionadas } de './input.js'",
+    "Exporta: esCamino(x, y), procesarMovimiento()",
+    "esCamino retorna true para tipo==='camino' y tipo==='salida'; false para todo lo dem\u00e1s o fuera de l\u00edmites",
+    "procesarMovimiento aplica rotaci\u00f3n (ArrowLeft/ArrowRight) y traslaci\u00f3n (ArrowUp/ArrowDown) con wall-sliding en ambos ejes X e Y independientemente",
+    "Usa PLAYER_COLLISION_RADIUS para los 4 puntos de colisi\u00f3n en cada eje",
+    "No contiene `'use strict'` ni IIFE",
+    "`node --check src/player.js` sale con c\u00f3digo 0"
+  ]
+}

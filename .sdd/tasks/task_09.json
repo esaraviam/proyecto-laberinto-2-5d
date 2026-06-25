@@ -1,0 +1,24 @@
+{
+  "id": "task_09",
+  "spec": "refactor-and-best-practices",
+  "title": "Crear src/textures.js \u2014 extraer generaci\u00f3n de texturas procedurales",
+  "skill": "backend-coder",
+  "model_hint": "sonnet",
+  "status": "completed",
+  "depends_on": [
+    "task_06"
+  ],
+  "read_architecture_section": "documentation/api/api_refactor-and-best-practices.md#M\u00f3dulo: `src/textures.js`",
+  "file_scope": [
+    "src/textures.js"
+  ],
+  "acceptance_criteria": [
+    "El archivo src/textures.js existe e importa { TEX_SIZE } de './constants.js'",
+    "Exporta: muroTexData, techoTexData, sueloTexData (Uint8ClampedArray, 64\u00d764\u00d74 bytes cada uno)",
+    "Las tres funciones crearTextura* son privadas del m\u00f3dulo (no exportadas)",
+    "Los tres pixelData se generan a nivel de m\u00f3dulo (top-level, una sola vez al cargar)",
+    "La l\u00f3gica de generaci\u00f3n de texturas es id\u00e9ntica a motor.js (mismos algoritmos: ladrillo, paneles, hormig\u00f3n)",
+    "No contiene `'use strict'` ni IIFE",
+    "`node --check src/textures.js` sale con c\u00f3digo 0"
+  ]
+}

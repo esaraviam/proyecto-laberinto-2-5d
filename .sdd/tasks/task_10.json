@@ -1,0 +1,23 @@
+{
+  "id": "task_10",
+  "spec": "refactor-and-best-practices",
+  "title": "Crear src/state.js \u2014 objeto de estado centralizado del juego",
+  "skill": "backend-coder",
+  "model_hint": "sonnet",
+  "status": "completed",
+  "depends_on": [
+    "task_06"
+  ],
+  "read_architecture_section": "documentation/db/db_refactor-and-best-practices.md#Objeto ra\u00edz: `state`",
+  "file_scope": [
+    "src/state.js"
+  ],
+  "acceptance_criteria": [
+    "El archivo src/state.js existe e importa { PLAYER_MAX_HP } de './constants.js'",
+    "Exporta un \u00fanico objeto `state` con TODOS los campos definidos en el contrato DB: laberinto, jugador, enemigos, items, kills, playerHP, cooldownDisparo, enemyAttackTimer, muzzleFlashTimer, hitMarkerTimer, damageFlashTimer, gameOver, nivelCompletado, tieneAmetralladora, numEnemigosInicial, temporizadorActivo, temporizadorFinMs",
+    "playerHP se inicializa a PLAYER_MAX_HP",
+    "El objeto `state` es plano (no tiene m\u00e9todos ni getters/setters)",
+    "No contiene `'use strict'` ni IIFE",
+    "`node --check src/state.js` sale con c\u00f3digo 0"
+  ]
+}

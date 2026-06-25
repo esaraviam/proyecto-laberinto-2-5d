@@ -1,0 +1,26 @@
+{
+  "id": "task_11",
+  "spec": "refactor-and-best-practices",
+  "title": "Crear src/map.js \u2014 generaci\u00f3n de laberinto y colocaci\u00f3n de salida",
+  "skill": "backend-coder",
+  "model_hint": "sonnet",
+  "status": "completed",
+  "depends_on": [
+    "task_06",
+    "task_10"
+  ],
+  "read_architecture_section": "documentation/api/api_refactor-and-best-practices.md#M\u00f3dulo: `src/map.js`",
+  "file_scope": [
+    "src/map.js"
+  ],
+  "acceptance_criteria": [
+    "El archivo src/map.js existe e importa las constantes necesarias de './constants.js' y { state } de './state.js'",
+    "Exporta: generarMapa(filasCeldas, colsCeldas), colocarSalida(), celdasLibresLejanas(posX, posY, minDist)",
+    "generarMapa retorna { grid, filas, cols } \u2014 l\u00f3gica DFS-backtracker id\u00e9ntica a motor.js",
+    "colocarSalida() usa BFS desde (1,1); marca la celda m\u00e1s lejana como tipo:'salida'; escribe state.laberinto.salida",
+    "colocarSalida() valida \u00edndices: 0 <= f < filas y 0 <= c < columnas en cada paso del BFS",
+    "celdasLibresLejanas incluye el shuffle Fisher-Yates y filtra solo tipo==='camino'",
+    "No contiene `'use strict'` ni IIFE",
+    "`node --check src/map.js` sale con c\u00f3digo 0"
+  ]
+}

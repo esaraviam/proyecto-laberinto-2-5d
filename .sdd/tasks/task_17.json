@@ -1,0 +1,36 @@
+{
+  "id": "task_17",
+  "spec": "refactor-and-best-practices",
+  "title": "Crear src/game.js \u2014 bucle principal, inicializaci\u00f3n, victoria, temporizador, disparo",
+  "skill": "backend-coder",
+  "model_hint": "sonnet",
+  "status": "completed",
+  "depends_on": [
+    "task_06",
+    "task_07",
+    "task_08",
+    "task_10",
+    "task_11",
+    "task_12",
+    "task_13",
+    "task_14",
+    "task_15",
+    "task_16"
+  ],
+  "read_architecture_section": "documentation/api/api_refactor-and-best-practices.md#M\u00f3dulo: `src/game.js`",
+  "file_scope": [
+    "src/game.js"
+  ],
+  "acceptance_criteria": [
+    "El archivo src/game.js existe e importa de todos los m\u00f3dulos que necesita (constants, state, audio, map, raycaster, player, enemies, items, renderer)",
+    "Exporta: inicializar(), buclePrincipal(), disparar()",
+    "inicializar() resetea TODOS los campos de state antes de generar el mapa (reset total incluyendo nivelCompletado, temporizadorActivo, tieneAmetralladora, etc.)",
+    "inicializar() llama generarMapa \u2192 construye state.laberinto \u2192 llama colocarSalida() \u2192 spawna jugador, enemigos e \u00edtems",
+    "buclePrincipal() decrementa todos los timers, llama procesarMovimiento/actualizarEnemigos/verificarPickups/verificarVictoria/gestionarTemporizador, renderiza en orden correcto, llama requestAnimationFrame",
+    "disparar() usa zBuffer[colCentro] para z-check; elimina enemigo con splice; incrementa kills; setea hitMarkerTimer; llama playHit()",
+    "verificarVictoria() solo setea nivelCompletado si !gameOver y el jugador est\u00e1 en la celda de salida",
+    "gestionarTemporizador() usa performance.now() (nunca Date.now())",
+    "No contiene `'use strict'` ni IIFE",
+    "`node --check src/game.js` sale con c\u00f3digo 0"
+  ]
+}

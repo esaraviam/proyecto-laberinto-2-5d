@@ -1,0 +1,22 @@
+{
+  "id": "task_19",
+  "spec": "refactor-and-best-practices",
+  "title": "Actualizar index.html \u2014 cambiar script tag a type=module",
+  "skill": "senior-frontend-engineer",
+  "model_hint": "sonnet",
+  "status": "completed",
+  "depends_on": [
+    "task_18"
+  ],
+  "read_architecture_section": "documentation/api/api_refactor-and-best-practices.md#Contrato de `index.html`",
+  "file_scope": [
+    "index.html"
+  ],
+  "acceptance_criteria": [
+    "index.html contiene `<script type=\"module\" src=\"src/main.js\"></script>` en lugar de `<script src=\"motor.js\"></script>`",
+    "Ning\u00fan otro elemento del HTML fue modificado (estilos, estructura, canvas, controles intactos)",
+    "El atributo `type=\"module\"` est\u00e1 presente (sin \u00e9l los imports fallar\u00e1n en el navegador)",
+    "No se a\u00f1adieron scripts inline ni otros atributos al tag script",
+    "`node --check index.html` no aplica \u2014 validaci\u00f3n: abrir en navegador con servidor HTTP local y verificar que no hay errores de carga de m\u00f3dulos en consola"
+  ]
+}

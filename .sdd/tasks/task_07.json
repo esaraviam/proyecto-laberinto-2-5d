@@ -1,0 +1,21 @@
+{
+  "id": "task_07",
+  "spec": "refactor-and-best-practices",
+  "title": "Crear src/audio.js \u2014 extraer motor de audio Web Audio API",
+  "skill": "backend-coder",
+  "model_hint": "sonnet",
+  "status": "completed",
+  "depends_on": [],
+  "read_architecture_section": "documentation/api/api_refactor-and-best-practices.md#M\u00f3dulo: `src/audio.js`",
+  "file_scope": [
+    "src/audio.js"
+  ],
+  "acceptance_criteria": [
+    "El archivo src/audio.js existe y exporta: ensureAudioCtx, playShoot, playHit, playEnemyAlert, playDamage, playPickup, playPickupWeapon",
+    "La variable `audioCtx` es privada del m\u00f3dulo (no exportada)",
+    "No importa nada (`import` vac\u00edo o ausente)",
+    "No contiene `'use strict'` ni IIFE",
+    "El c\u00f3digo de cada funci\u00f3n es id\u00e9ntico al de motor.js (no se modifica la l\u00f3gica de s\u00edntesis de audio)",
+    "`node --check src/audio.js` sale con c\u00f3digo 0"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "task_12",
+  "spec": "refactor-and-best-practices",
+  "title": "Crear src/raycaster.js \u2014 DDA raycasting, zBuffer y rayCache",
+  "skill": "backend-coder",
+  "model_hint": "sonnet",
+  "status": "completed",
+  "depends_on": [
+    "task_06",
+    "task_10"
+  ],
+  "read_architecture_section": "documentation/api/api_refactor-and-best-practices.md#M\u00f3dulo: `src/raycaster.js`",
+  "file_scope": [
+    "src/raycaster.js"
+  ],
+  "acceptance_criteria": [
+    "El archivo src/raycaster.js existe e importa { ANCHO_3D, RENDER_DIST } y dem\u00e1s constantes necesarias de './constants.js' y { state } de './state.js'",
+    "Exporta: zBuffer (new Float64Array(ANCHO_3D)), rayCache (array vac\u00edo []), lanzarRayoDDA(anguloRayo)",
+    "lanzarRayoDDA retorna { dist, u, side, tipo } \u2014 algoritmo DDA id\u00e9ntico al de motor.js",
+    "zBuffer y rayCache son los mismos objetos exportados (no se recrean en cada frame); renderer los muta directamente",
+    "No contiene `'use strict'` ni IIFE",
+    "`node --check src/raycaster.js` sale con c\u00f3digo 0"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "id": "task_16",
+  "spec": "refactor-and-best-practices",
+  "title": "Crear src/renderer.js \u2014 todas las funciones de renderizado",
+  "skill": "senior-frontend-engineer",
+  "model_hint": "sonnet",
+  "status": "completed",
+  "depends_on": [
+    "task_06",
+    "task_09",
+    "task_10",
+    "task_12"
+  ],
+  "read_architecture_section": "documentation/ui/ui_refactor-and-best-practices.md",
+  "file_scope": [
+    "src/renderer.js"
+  ],
+  "acceptance_criteria": [
+    "El archivo src/renderer.js existe e importa las constantes de './constants.js', { state } de './state.js', { muroTexData, techoTexData, sueloTexData } de './textures.js', { lanzarRayoDDA, zBuffer, rayCache } de './raycaster.js'",
+    "Declara canvas, ctx, frameBuffer, buf como variables privadas top-level del m\u00f3dulo (no exportadas)",
+    "Exporta: renderizar3D(), renderizarEnemigos(), renderizarItems(), renderizarMira(), renderizarHUD(), renderizarMinimapa()",
+    "renderizar3D() rellena frameBuffer, llama lanzarRayoDDA por cada columna, llena zBuffer y rayCache, hace ctx.putImageData, aplica damage/muzzle flash overlays",
+    "Celda tipo 'salida' renderiza en cian pulsante (SALIDA_PULSO_HZ), no usa textura de muro",
+    "renderizarHUD() muestra cuenta regresiva con borde verde, texto rojo si restante <= 5s",
+    "renderizarMinimapa() usa rayCache (no relanza rayos) para el FOV",
+    "Es el \u00daNICO m\u00f3dulo que accede a ctx. Ninguna funci\u00f3n exporta canvas ni ctx.",
+    "No contiene `'use strict'` ni IIFE",
+    "`node --check src/renderer.js` sale con c\u00f3digo 0"
+  ]
+}

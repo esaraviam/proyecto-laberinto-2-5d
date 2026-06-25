@@ -1,0 +1,23 @@
+{
+  "id": "task_08",
+  "spec": "refactor-and-best-practices",
+  "title": "Crear src/input.js \u2014 extraer manejo de teclado con callbacks",
+  "skill": "backend-coder",
+  "model_hint": "sonnet",
+  "status": "completed",
+  "depends_on": [],
+  "read_architecture_section": "documentation/api/api_refactor-and-best-practices.md#M\u00f3dulo: `src/input.js`",
+  "file_scope": [
+    "src/input.js"
+  ],
+  "acceptance_criteria": [
+    "El archivo src/input.js existe y exporta: teclasPresionadas (Set), onDisparo(callback), onReinicio(callback)",
+    "Los event listeners keydown/keyup se registran UNA SOLA VEZ al cargar el m\u00f3dulo (top-level)",
+    "keydown con tecla ' ' llama al callback registrado por onDisparo (si existe) y hace ev.preventDefault()",
+    "keydown con tecla 'r'/'R' llama al callback registrado por onReinicio (si existe)",
+    "El resto de teclas se a\u00f1aden a teclasPresionadas; keyup las elimina",
+    "No importa nada",
+    "No contiene `'use strict'` ni IIFE",
+    "`node --check src/input.js` sale con c\u00f3digo 0"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "task_18",
+  "spec": "refactor-and-best-practices",
+  "title": "Crear src/main.js \u2014 punto de entrada y wireo de callbacks",
+  "skill": "backend-coder",
+  "model_hint": "sonnet",
+  "status": "completed",
+  "depends_on": [
+    "task_17"
+  ],
+  "read_architecture_section": "documentation/api/api_refactor-and-best-practices.md#M\u00f3dulo: `src/main.js`",
+  "file_scope": [
+    "src/main.js"
+  ],
+  "acceptance_criteria": [
+    "El archivo src/main.js existe e importa { inicializar, buclePrincipal, disparar } de './game.js' y { onDisparo, onReinicio } de './input.js'",
+    "Llama onDisparo(disparar) para registrar el callback de disparo",
+    "Llama onReinicio(inicializar) para registrar el callback de reinicio",
+    "Llama inicializar() y luego buclePrincipal() \u2014 en ese orden",
+    "No contiene ninguna l\u00f3gica de juego (solo imports + 4 llamadas de arranque)",
+    "No exporta nada",
+    "No contiene `'use strict'` ni IIFE",
+    "`node --check src/main.js` sale con c\u00f3digo 0"
+  ]
+}

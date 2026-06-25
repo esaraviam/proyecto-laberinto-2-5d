@@ -1,0 +1,20 @@
+{
+  "id": "task_06",
+  "spec": "refactor-and-best-practices",
+  "title": "Crear src/constants.js \u2014 extraer todas las constantes",
+  "skill": "backend-coder",
+  "model_hint": "sonnet",
+  "status": "completed",
+  "depends_on": [],
+  "read_architecture_section": "documentation/api/api_refactor-and-best-practices.md#M\u00f3dulo: `src/constants.js`",
+  "file_scope": [
+    "src/constants.js"
+  ],
+  "acceptance_criteria": [
+    "El archivo src/constants.js existe y exporta con `export const` las 34 constantes listadas en el contrato de API",
+    "No contiene ning\u00fan `import` (es el m\u00f3dulo ra\u00edz sin dependencias)",
+    "No contiene `'use strict'` ni IIFE",
+    "Todas las constantes tienen exactamente los mismos valores que en motor.js l\u00edneas 7\u201341",
+    "`node --check src/constants.js` sale con c\u00f3digo 0"
+  ]
+}

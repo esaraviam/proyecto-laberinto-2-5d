@@ -1,52 +1,98 @@
 # Convenciones de Implementación — Laberinto 2.5D
 
-> **Leer este archivo PRIMERO** (estrategia de prompt-caching SDD). Aplica a todas las tareas de la
-> feature `puerta_salida`. Luego leer únicamente la sección de arquitectura asignada en la tarea.
+> **Leer este archivo PRIMERO** (estrategia de prompt-caching SDD). Aplica a todas las tareas
+> del spec `refactor-and-best-practices`. Luego leer SOLO la sección de arquitectura asignada.
 
-## Estructura del proyecto
-- Todo el motor vive en **`motor.js`** (IIFE único, 1381 líneas) + **`index.html`**. **Sin
-  dependencias externas, sin frameworks, sin build step.** Vanilla JS + Canvas 2D.
-- No se crean archivos JS nuevos. Toda la lógica de esta feature se integra en `motor.js`.
+---
+
+## Estructura del proyecto post-refactor
+
+```
+proyecto_laberinto_25d/
+├── index.html            ← solo cambia <script> a type="module" src="src/main.js"
+├── motor.js              ← MONOLITO ORIGINAL — se elimina al final del refactor
+└── src/
+    ├── constants.js
+    ├── audio.js
+    ├── input.js
+    ├── textures.js
+    ├── state.js
+    ├── map.js
+    ├── raycaster.js
+    ├── player.js
+    ├── enemies.js
+    ├── items.js
+    ├── renderer.js
+    ├── game.js
+    └── main.js
+```
+
+**Stack**: HTML5 + Canvas 2D + Web Audio API. Sin bundler, sin frameworks, sin build step. JS puro.
+
+---
 
 ## Estilo de código
-- Indentación 4 espacios; `const`/`let` (nunca `var`); funciones nombradas dentro del IIFE.
-- Nombres de dominio en **español** (`jugador`, `laberinto`, `enemigos`, `colocarSalida`,
-  `reaparecerEnemigos`) — coherente con el código existente.
-- Constantes en `UPPER_SNAKE_CASE` declaradas al inicio del IIFE (junto a las existentes, líneas 7–38).
-- Variables de estado mutable declaradas en el bloque de estado (≈ líneas 339–349).
 
-## Reglas de la feature (de obligado cumplimiento)
-1. **Tipo `'salida'`**: transitable para colisión (`esCamino`), **opaca** para el rayo (`lanzarRayoDDA`).
-2. **Colocación procedural**: la salida se elige por **BFS de celda más lejana** del spawn (ADR-001 en
-   `db_puerta_salida.md`). Prohibido hardcodear coordenadas.
-3. **Temporizador en tiempo real**: usar `performance.now()` y `TIEMPO_BUSQUEDA_MS=30000`. **Prohibido**
-   contar frames de `requestAnimationFrame` (FPS no garantizado).
-4. **No duplicar lógica de spawn**: extraer el spawn de enemigos inlined en `inicializar()` a un helper
-   reutilizable consumido por `inicializar()` y `reaparecerEnemigos()` (DRY).
-5. **Victoria única**: solo pisar la celda de salida completa el nivel. Matar enemigos NO gana.
-6. **Eliminar** el bloque `'¡ZONA DESPEJADA!'` (≈ líneas 1133–1145): queda obsoleto.
-7. **Reset total**: `inicializar()` debe restablecer TODO el estado nuevo (`nivelCompletado`,
-   `temporizadorActivo`, `temporizadorFinMs`) para que `[R]` deje el juego limpio.
-8. **Paleta**: cian `#00ffff` / `[0,255,255]` reservado EXCLUSIVAMENTE a la salida. No tocar el resto
-   de la estética verde.
+- Indentación **4 espacios**; `const`/`let` (nunca `var`).
+- **Sin `"use strict"`** — los módulos ES6 son strict por defecto.
+- **Sin IIFE** — el aislamiento lo provee el sistema de módulos.
+- Nombres de dominio en **español** (`jugador`, `laberinto`, `enemigos`, `colocarSalida`).
+- Constantes en `UPPER_SNAKE_CASE`, declaradas en `constants.js`, nunca inline.
+- Funciones nombradas (no arrow functions para funciones top-level exportadas).
 
-## Integración en el bucle
-- `verificarVictoria()` y `gestionarTemporizador()` se invocan en `buclePrincipal()` solo en juego
-  activo (no en `gameOver`/`nivelCompletado`).
-- `nivelCompletado` se comporta como `gameOver` a efectos de pausa (render sí, update no).
-- Orden de evaluación: `gameOver` antes que victoria (la victoria solo se setea si `!gameOver`).
+---
+
+## Reglas de módulos ES6
+
+1. **Imports explícitos**: toda dependencia se declara con `import { X } from './Y.js'`. Extensión `.js` obligatoria (navegador nativo no resuelve sin ella).
+2. **Sin side effects en imports**: ningún módulo ejecuta lógica de juego al ser importado (excepto textures.js que genera las texturas una vez).
+3. **Estado centralizado**: todo estado mutable vive en `state.js → state`. Ningún módulo declara variables globales propias fuera de `state`.
+4. **Canvas privado**: solo `renderer.js` accede a `ctx` y `canvas`. Ningún otro módulo llama a `ctx.*`.
+5. **Sin dependencias circulares**: el grafo de imports es un DAG. Si una tarea introduce una dependencia circular, **ABORTAR y reportar**.
+
+---
+
+## Estado mutable: reglas de escritura
+
+- Toda modificación de `state.*` ocurre dentro de la función responsable del dominio correspondiente.
+- **`playerHP`**: siempre `Math.min(PLAYER_MAX_HP, Math.max(0, ...))`.
+- **`temporizadorFinMs`**: timestamp absoluto de `performance.now()`. Prohibido `Date.now()`.
+- **Índices de mapa**: toda lectura `state.laberinto.mapa[f][c]` verifica `0 <= f < filas` y `0 <= c < columnas`.
+- **Cota de spawn**: `reaparecerEnemigos(n)` usa `Math.min(n, libres.length)`.
+
+---
+
+## Reglas de seguridad (heredadas de `conventions/security.md`)
+
+1. Sin `eval`, `Function`, `innerHTML`, `fetch`, `WebSocket`, ni `localStorage`.
+2. Bucles sobre el mapa con cotas explícitas (no `while(true)` sin salida).
+3. BFS de `colocarSalida` marca celdas visitadas para no reenqueue.
+4. CSP-friendly: sin `<script>` inline nuevos en `index.html`.
+
+---
 
 ## Pruebas / validación
-- No hay framework de tests. **Validación = lint sintáctico + ejecución manual en navegador.**
-- Comando de lint obligatorio por tarea de código:
-  `node --check motor.js`  → debe salir con código 0 (sin errores de sintaxis).
-- Validación funcional (manual, documentar en el reporte): cargar `index.html`, comprobar el
-  criterio de aceptación correspondiente.
 
-## Convenciones de seguridad
-Ver `documentation/conventions/security.md` (constraints del `ai-security-expert`).
+No hay framework de tests. **Validación = sintaxis + ejecución manual.**
+
+**Lint sintáctico** (obligatorio por tarea de código):
+```bash
+node --check src/<módulo>.js
+```
+Debe salir con código 0.
+
+**Validación funcional** (manual, documentar en reporte): abrir `index.html` en navegador y verificar el criterio de aceptación asignado.
+
+---
 
 ## Límite de alcance por tarea
-Cada tarea solo edita los archivos de su `file_scope`. Si necesita tocar algo fuera, **ABORTA y
-repórtalo** — nunca edites fuera de alcance. (En la práctica casi todo es `motor.js`, por lo que las
-tareas sobre `motor.js` se serializan en oleadas distintas para evitar colisiones.)
+
+Cada tarea solo edita los archivos de su `file_scope`. Si necesita tocar algo fuera, **ABORTAR y reportar** — nunca editar fuera de alcance.
+
+Dado que los módulos son independientes, las tareas de implementación de distintos módulos pueden ejecutarse en paralelo (sin colisión de archivos). Las tareas de `index.html` y `motor.js` son exclusivas y van en oleada separada.
+
+---
+
+## Convenciones de seguridad (detalle)
+
+Ver `documentation/conventions/security.md`.

@@ -1,0 +1,26 @@
+{
+  "id": "task_15",
+  "spec": "refactor-and-best-practices",
+  "title": "Crear src/items.js \u2014 l\u00f3gica de recogida de \u00edtems (salud y arma)",
+  "skill": "backend-coder",
+  "model_hint": "sonnet",
+  "status": "completed",
+  "depends_on": [
+    "task_06",
+    "task_07",
+    "task_10"
+  ],
+  "read_architecture_section": "documentation/api/api_refactor-and-best-practices.md#M\u00f3dulo: `src/items.js`",
+  "file_scope": [
+    "src/items.js"
+  ],
+  "acceptance_criteria": [
+    "El archivo src/items.js existe e importa las constantes necesarias de './constants.js', { state } de './state.js', y { playPickup, playPickupWeapon } de './audio.js'",
+    "Exporta: verificarPickups()",
+    "verificarPickups() itera state.items; usa Math.hypot para distancia; desactiva \u00edtem (activo=false) al recogerlo",
+    "\u00cdtem 'salud': incrementa state.playerHP con Math.min(PLAYER_MAX_HP, ...); llama playPickup()",
+    "\u00cdtem 'ametralladora': setea state.tieneAmetralladora = true; llama playPickupWeapon()",
+    "No contiene `'use strict'` ni IIFE",
+    "`node --check src/items.js` sale con c\u00f3digo 0"
+  ]
+}

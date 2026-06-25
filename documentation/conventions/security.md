@@ -1,4 +1,4 @@
-# Security Constraints — Puerta de Salida (ai-security-expert)
+# Security Constraints — Módulos ES6 (ai-security-expert)
 
 ## Security Report
 
@@ -43,3 +43,16 @@ hay impacto sobre terceros, datos, ni el sistema host. Severidad agregada: **LOW
 ### Status
 Secured — **No blocking directives.** Riesgo residual LOW (robustez local). La implementación puede
 proceder respetando las 5 constraints anteriores; QA debe verificarlas como criterios de robustez.
+
+---
+
+## Addendum — Módulos ES6 (refactor-and-best-practices)
+
+### Nuevos constraints para la arquitectura modular
+
+6. **Exports mínimos**: cada módulo exporta solo los símbolos que sus consumidores declarados necesitan. Variables internas (`audioCtx`, `buf`, `frameBuffer`, `canvas`, `ctx`) nunca se exportan.
+7. **Sin imports dinámicos variables**: todos los imports son estáticos y literales. Nunca derivados de input del usuario.
+8. **`file://` requiere servidor local**: documentar en README que se necesita un servidor HTTP local para ES6 modules nativos (`npx serve .` o `python -m http.server 8080`).
+9. **`state` como objeto plano**: no añadir métodos a `state` que puedan sobreescribirse. Solo propiedades de datos primitivos y arrays/objetos.
+
+Severidad agregada post-migración: **LOW** (sin cambio respecto al monolito original).
