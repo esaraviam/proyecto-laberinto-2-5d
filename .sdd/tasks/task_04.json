@@ -1,0 +1,18 @@
+{
+  "id": "task_04",
+  "spec": "puerta_salida.md",
+  "title": "Render 3D portal cian + minimapa cian (lanzarRayoDDA + renderizar3D + renderizarMinimapa)",
+  "skill": "senior-frontend-engineer",
+  "model_hint": "sonnet",
+  "status": "completed",
+  "depends_on": ["task_02"],
+  "read_architecture_section": "documentation/ui/ui_puerta_salida.md#2-portal-en-vista-3d",
+  "file_scope": ["motor.js"],
+  "acceptance_criteria": [
+    "lanzarRayoDDA retorna {dist, u, side, tipo} donde tipo='salida'|'pared'; la condición de impacto acepta tipo==='pared'||tipo==='salida' (≈línea 506); retrocompatible (consumidores que ignoran tipo no se rompen)",
+    "renderizar3D: cuando resultado.tipo==='salida', la columna se pinta con r=0, g=floor(255*brillo*(1-shade)), b=floor(255*brillo*(1-shade)) donde brillo=0.55+0.45*sin(performance.now()*0.006283*SALIDA_PULSO_HZ); se aplica el mismo factor shade que muros normales (distancia/SHADE_DIVISOR+faceDarken); NO usa muroTexData para esa columna",
+    "renderizarMinimapa: celda tipo==='salida' se pinta #00ffff en lugar de #111 (extensión del ternario ≈línea 1210)",
+    "Verificación visual: mirar hacia la puerta desde distintas distancias muestra una columna cian que late; el minimapa muestra la celda cian claramente distinguible",
+    "node --check motor.js sale con código 0"
+  ]
+}

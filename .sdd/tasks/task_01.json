@@ -1,0 +1,18 @@
+{
+  "id": "task_01",
+  "spec": "puerta_salida.md",
+  "title": "Constantes, variables de estado y helper de spawn",
+  "skill": "backend-coder",
+  "model_hint": "sonnet",
+  "status": "completed",
+  "depends_on": [],
+  "read_architecture_section": "documentation/db/db_puerta_salida.md#3-variables-de-estado-nuevas",
+  "file_scope": ["motor.js"],
+  "acceptance_criteria": [
+    "Constantes TIEMPO_BUSQUEDA_MS=30000, SALIDA_COLOR=[0,255,255], SALIDA_PULSO_HZ≈3 declaradas junto al bloque de constantes existente (líneas 7-38)",
+    "Variables nivelCompletado, numEnemigosInicial, temporizadorActivo, temporizadorFinMs declaradas junto al bloque de estado (≈líneas 339-349)",
+    "La lógica de selección de celdas libres + barajado de inicializar() (≈líneas 419-434) extraída a función helper reutilizable celdasLibresLejanas(posX, posY, minDist) que devuelve array shuffled de celdas camino a distancia > minDist del punto dado",
+    "inicializar() sigue funcionando igual que antes usando el helper (sin regresión visible)",
+    "node --check motor.js sale con código 0"
+  ]
+}

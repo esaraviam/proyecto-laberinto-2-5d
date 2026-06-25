@@ -36,6 +36,9 @@
     const SALUD_ITEMS_MAX = 3;
     const SALUD_RECUPERACION = 25;
     const ITEM_FLOAT_SPEED = 0.003;
+    const TIEMPO_BUSQUEDA_MS = 30000;
+    const SALIDA_COLOR = [0, 255, 255];
+    const SALIDA_PULSO_HZ = 3;
 
     // =========================================================================
     // SETUP
@@ -347,6 +350,10 @@
     let gameOver = false;
     let items = [];
     let tieneAmetralladora = false;
+    let nivelCompletado = false;
+    let numEnemigosInicial = 0;
+    let temporizadorActivo = false;
+    let temporizadorFinMs = 0;
     const teclasPresionadas = new Set();
 
     // =========================================================================
@@ -387,6 +394,84 @@
     }
 
     // =========================================================================
+    // HELPERS
+    // =========================================================================
+    /**
+     * Devuelve un array barajado de posiciones {x, y} (centro de celda)
+     * de todas las celdas 'camino' del laberinto actual que se encuentran
+     * a distancia euclidiana estrictamente mayor que minDist del punto (posX, posY).
+     * Requiere que `laberinto` ya esté inicializado antes de llamar.
+     */
+    function celdasLibresLejanas(posX, posY, minDist) {
+        const resultado = [];
+        for (let f = 1; f < laberinto.filas - 1; f++) {
+            for (let c = 1; c < laberinto.columnas - 1; c++) {
+                if (laberinto.mapa[f][c].tipo === 'camino') {
+                    const px = c + 0.5, py = f + 0.5;
+                    if (Math.hypot(px - posX, py - posY) > minDist) {
+                        resultado.push({ x: px, y: py });
+                    }
+                }
+            }
+        }
+        // Fisher-Yates in-place shuffle
+        for (let i = resultado.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [resultado[i], resultado[j]] = [resultado[j], resultado[i]];
+        }
+        return resultado;
+    }
+
+    /**
+     * Coloca la puerta de salida en la celda 'camino' más lejana del spawn (1,1)
+     * mediante BFS de 4-direcciones sobre el grafo de celdas transitables.
+     * Pre:  laberinto.mapa ya generado; jugador spawn en celda (1,1).
+     * Post: la celda argmax(distancia BFS) queda como tipo:'salida';
+     *       laberinto.salida = { f, c }.
+     */
+    function colocarSalida() {
+        const DIRS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+        // dist[f][c] = pasos BFS desde (1,1), -1 = no visitado
+        const dist = Array.from({ length: laberinto.filas }, () =>
+            new Array(laberinto.columnas).fill(-1)
+        );
+
+        const cola = [];
+        dist[1][1] = 0;
+        cola.push([1, 1]);
+
+        let cabeza = 0;
+        let maxDist = -1;
+        let salidaF = 1, salidaC = 1; // nunca coincidirá con spawn porque maxDist parte en -1
+
+        while (cabeza < cola.length) {
+            const [f, c] = cola[cabeza++];
+            const d = dist[f][c];
+
+            // Candidato: cualquier celda 'camino' distinta del spawn
+            if ((f !== 1 || c !== 1) && laberinto.mapa[f][c].tipo === 'camino' && d > maxDist) {
+                maxDist = d;
+                salidaF = f;
+                salidaC = c;
+            }
+
+            for (const [df, dc] of DIRS) {
+                const nf = f + df;
+                const nc = c + dc;
+                if (nf < 0 || nf >= laberinto.filas || nc < 0 || nc >= laberinto.columnas) continue;
+                if (dist[nf][nc] !== -1) continue;
+                const tipo = laberinto.mapa[nf][nc].tipo;
+                if (tipo !== 'camino' && tipo !== 'salida') continue;
+                dist[nf][nc] = d + 1;
+                cola.push([nf, nc]);
+            }
+        }
+
+        laberinto.mapa[salidaF][salidaC].tipo = 'salida';
+        laberinto.salida = { f: salidaF, c: salidaC };
+    }
+
+    // =========================================================================
     // INIT
     // =========================================================================
     function inicializar() {
@@ -398,6 +483,9 @@
         hitMarkerTimer = 0;
         damageFlashTimer = 0;
         gameOver = false;
+        nivelCompletado = false;
+        temporizadorActivo = false;
+        temporizadorFinMs = 0;
         items = [];
         tieneAmetralladora = false;
 
@@ -414,26 +502,17 @@
             columnas: cols
         };
 
+        // Colocar la salida (BFS más lejana del spawn) ANTES de calcular celdas libres.
+        // La celda de salida queda con tipo:'salida', por lo que celdasLibresLejanas
+        // (que filtra tipo==='camino') la excluirá automáticamente del pool de spawn.
+        colocarSalida();
+
         jugador = { x: 1.5, y: 1.5, angulo: 0 };
 
-        const libres = [];
-        for (let f = 1; f < laberinto.filas - 1; f++) {
-            for (let c = 1; c < laberinto.columnas - 1; c++) {
-                if (laberinto.mapa[f][c].tipo === 'camino') {
-                    const px = c + 0.5, py = f + 0.5;
-                    if (Math.hypot(px - jugador.x, py - jugador.y) > 3) {
-                        libres.push({ x: px, y: py });
-                    }
-                }
-            }
-        }
-
-        for (let i = libres.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [libres[i], libres[j]] = [libres[j], libres[i]];
-        }
+        const libres = celdasLibresLejanas(jugador.x, jugador.y, 3);
 
         const N = Math.min(5, libres.length);
+        numEnemigosInicial = N;
         enemigos = libres.slice(0, N).map(pos => ({
             ...pos,
             targetX: pos.x,
@@ -503,7 +582,8 @@
             if (mapY < 0 || mapY >= laberinto.filas || mapX < 0 || mapX >= laberinto.columnas) {
                 return { dist: RENDER_DIST, u: 0, side: 0 };
             }
-            if (laberinto.mapa[mapY][mapX].tipo === 'pared') {
+            const tipoCelda = laberinto.mapa[mapY][mapX].tipo;
+            if (tipoCelda === 'pared' || tipoCelda === 'salida') {
                 hit = true;
             }
         }
@@ -521,7 +601,7 @@
         }
         wallX -= Math.floor(wallX);
 
-        return { dist: perpDist, u: wallX, side };
+        return { dist: perpDist, u: wallX, side, tipo: laberinto.mapa[mapY][mapX].tipo };
     }
 
     // =========================================================================
@@ -575,23 +655,36 @@
             const texU = Math.floor(resultado.u * TEX_SIZE) % TEX_SIZE;
             const faceDarken = resultado.side ? FACE_DARKEN_FACTOR : 0;
 
-            for (let y = wallTop; y <= wallBot; y++) {
-                const texV = Math.floor(((y - wallTop) / alturaPared) * TEX_SIZE);
-                const texIdx = (texV * TEX_SIZE + texU) * 4;
-
-                let r = muroTexData[texIdx];
-                let g = muroTexData[texIdx + 1];
-                let b = muroTexData[texIdx + 2];
-
+            if (resultado.tipo === 'salida') {
+                const brillo = 0.55 + 0.45 * Math.sin(performance.now() * 0.001 * 2 * Math.PI * SALIDA_PULSO_HZ);
                 const shade = Math.min(0.94, distancia / SHADE_DIVISOR + faceDarken);
-                r = Math.floor(r * (1 - shade));
-                g = Math.floor(g * (1 - shade));
-                b = Math.floor(b * (1 - shade));
+                const cianVal = Math.floor(255 * brillo * (1 - shade));
+                for (let y = wallTop; y <= wallBot; y++) {
+                    const i = (y * ANCHO_3D + x) * 4;
+                    buf[i]     = 0;
+                    buf[i + 1] = cianVal;
+                    buf[i + 2] = cianVal;
+                    buf[i + 3] = 255;
+                }
+            } else {
+                for (let y = wallTop; y <= wallBot; y++) {
+                    const texV = Math.floor(((y - wallTop) / alturaPared) * TEX_SIZE);
+                    const texIdx = (texV * TEX_SIZE + texU) * 4;
 
-                const i = (y * ANCHO_3D + x) * 4;
-                buf[i] = r;
-                buf[i + 1] = g;
-                buf[i + 2] = b;
+                    let r = muroTexData[texIdx];
+                    let g = muroTexData[texIdx + 1];
+                    let b = muroTexData[texIdx + 2];
+
+                    const shade = Math.min(0.94, distancia / SHADE_DIVISOR + faceDarken);
+                    r = Math.floor(r * (1 - shade));
+                    g = Math.floor(g * (1 - shade));
+                    b = Math.floor(b * (1 - shade));
+
+                    const i = (y * ANCHO_3D + x) * 4;
+                    buf[i] = r;
+                    buf[i + 1] = g;
+                    buf[i + 2] = b;
+                }
             }
         }
 
@@ -900,6 +993,70 @@
     }
 
     // =========================================================================
+    // GAME STATE LOGIC
+    // =========================================================================
+
+    /**
+     * Hace reaparecer n enemigos en celdas 'camino' libres lejanas al jugador.
+     * Acota efectivos al número de celdas disponibles (constraint de seguridad).
+     * Solo añade (push) — no reemplaza el array; en la práctica se llama cuando
+     * enemigos.length === 0, pero la función es agnóstica a ese invariante.
+     */
+    function reaparecerEnemigos(n) {
+        const libres = celdasLibresLejanas(jugador.x, jugador.y, 3);
+        const efectivos = Math.min(n, libres.length);
+        for (let i = 0; i < efectivos; i++) {
+            const pos = libres[i];
+            enemigos.push({
+                x: pos.x,
+                y: pos.y,
+                targetX: pos.x,
+                targetY: pos.y,
+                lastDx: 0,
+                lastDy: 0,
+                chasing: false
+            });
+        }
+    }
+
+    /**
+     * Comprueba si el jugador ha pisado la celda de salida.
+     * Solo actúa una vez (guarda !gameOver && !nivelCompletado).
+     * Es la única vía de victoria (RF-5): matar enemigos no gana el nivel.
+     */
+    function verificarVictoria() {
+        if (gameOver || nivelCompletado) return;
+        if (Math.floor(jugador.y) === laberinto.salida.f &&
+            Math.floor(jugador.x) === laberinto.salida.c) {
+            nivelCompletado = true;
+            temporizadorActivo = false;
+        }
+    }
+
+    /**
+     * Máquina de estados del temporizador de búsqueda.
+     * Orden de evaluación estricto (ver db_puerta_salida.md §5):
+     *   1. No-op si la partida está resuelta (victoria o muerte).
+     *   2. Arrancar cuenta atrás cuando el mapa queda sin enemigos.
+     *   3. Hacer reaparecer enemigos cuando expira el temporizador.
+     * Usa performance.now() para tiempo real independiente del FPS.
+     */
+    function gestionarTemporizador() {
+        if (nivelCompletado || gameOver) return;
+
+        if (enemigos.length === 0 && !temporizadorActivo && !nivelCompletado) {
+            temporizadorActivo = true;
+            temporizadorFinMs = performance.now() + TIEMPO_BUSQUEDA_MS;
+            return;
+        }
+
+        if (temporizadorActivo && performance.now() >= temporizadorFinMs) {
+            reaparecerEnemigos(numEnemigosInicial);
+            temporizadorActivo = false;
+        }
+    }
+
+    // =========================================================================
     // SHOOTING
     // =========================================================================
     function disparar() {
@@ -1130,16 +1287,17 @@
             return;
         }
 
-        if (enemigos.length === 0) {
-            ctx.fillStyle = 'rgba(0,0,0,0.55)';
-            ctx.fillRect(ANCHO_3D / 2 - 155, MITAD_ALTO - 28, 310, 54);
-            ctx.strokeStyle = '#00ff00';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(ANCHO_3D / 2 - 155, MITAD_ALTO - 28, 310, 54);
+        // Victoria overlay — precedencia: gameOver > nivelCompletado
+        if (nivelCompletado) {
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.fillRect(0, 0, ANCHO_3D, ALTO);
             ctx.fillStyle = '#00ff00';
-            ctx.font = 'bold 18px Courier New';
+            ctx.font = 'bold 36px Courier New';
             ctx.textAlign = 'center';
-            ctx.fillText('¡ZONA DESPEJADA!  [R] nuevo mapa', ANCHO_3D / 2, MITAD_ALTO + 8);
+            ctx.fillText('¡NIVEL COMPLETADO!', ANCHO_3D / 2, MITAD_ALTO - 18);
+            ctx.fillStyle = '#ffcc00';
+            ctx.font = 'bold 16px Courier New';
+            ctx.fillText(`Kills: ${kills}  |  [R] para jugar de nuevo`, ANCHO_3D / 2, MITAD_ALTO + 20);
             ctx.textAlign = 'left';
             return;
         }
@@ -1192,6 +1350,29 @@
         ctx.fillStyle = tieneAmetralladora ? '#ff8800' : '#888888';
         ctx.font = 'bold 13px Courier New';
         ctx.fillText(tieneAmetralladora ? 'ARMA: AMETRALLADORA' : 'ARMA: PISTOLA', 12, weapY + 16);
+
+        // Indicador de cuenta atrás — visible solo si temporizadorActivo
+        if (temporizadorActivo) {
+            const restante = Math.max(0, Math.ceil((temporizadorFinMs - performance.now()) / 1000));
+            const textoContador = `BUSCA LA SALIDA: ${restante}s`;
+            ctx.font = 'bold 14px Courier New';
+            const anchoTexto = ctx.measureText(textoContador).width;
+            const boxW = anchoTexto + 20;
+            const boxH = 24;
+            const boxX = ANCHO_3D / 2 - boxW / 2;
+            const boxY = ALTO / 2 - 10;
+            // Fondo con borde — consistente con cajas HUD existentes
+            ctx.fillStyle = 'rgba(0,0,0,0.55)';
+            ctx.fillRect(boxX, boxY, boxW, boxH);
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(boxX, boxY, boxW, boxH);
+            // Texto — rojo urgente si <= 5s, verde normal en otro caso
+            ctx.fillStyle = restante <= 5 ? '#ff3300' : '#00ff00';
+            ctx.textAlign = 'center';
+            ctx.fillText(textoContador, ANCHO_3D / 2, boxY + 16);
+            ctx.textAlign = 'left';
+        }
     }
 
     // =========================================================================
@@ -1207,7 +1388,8 @@
 
         for (let f = 0; f < laberinto.filas; f++) {
             for (let c = 0; c < laberinto.columnas; c++) {
-                ctx.fillStyle = laberinto.mapa[f][c].tipo === 'pared' ? '#004400' : '#111';
+                const tipoCeldaMapa = laberinto.mapa[f][c].tipo;
+                ctx.fillStyle = tipoCeldaMapa === 'pared' ? '#004400' : tipoCeldaMapa === 'salida' ? '#00ffff' : '#111';
                 ctx.strokeStyle = '#002200';
                 ctx.fillRect(offsetX + c * tamCelda, f * tamCelda, tamCelda, tamCelda);
                 ctx.strokeRect(offsetX + c * tamCelda, f * tamCelda, tamCelda, tamCelda);
@@ -1301,7 +1483,8 @@
         const fy = Math.floor(y);
         const fx = Math.floor(x);
         if (fy < 0 || fy >= laberinto.filas || fx < 0 || fx >= laberinto.columnas) return false;
-        return laberinto.mapa[fy][fx].tipo === 'camino';
+        const tipo = laberinto.mapa[fy][fx].tipo;
+        return tipo === 'camino' || tipo === 'salida';
     }
 
     function procesarMovimiento() {
@@ -1355,7 +1538,7 @@
         if (damageFlashTimer > 0) damageFlashTimer--;
         if (enemyAttackTimer > 0) enemyAttackTimer--;
 
-        if (gameOver) {
+        if (gameOver || nivelCompletado) {
             renderizar3D();
             renderizarHUD();
             requestAnimationFrame(buclePrincipal);
@@ -1365,6 +1548,8 @@
         procesarMovimiento();
         actualizarEnemigos();
         verificarPickups();
+        verificarVictoria();
+        gestionarTemporizador();
 
         renderizar3D();
         renderizarEnemigos();

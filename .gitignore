@@ -7,3 +7,4 @@
 
 # NOTA: .engram/ NO se ignora a propósito — la memoria de Engram debe
 # viajar con el repo (commit de manifest + chunks).
+.vercel

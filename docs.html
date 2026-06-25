@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cómo funciona — Laberinto 2.5D</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --green: #00ff00;
+            --green-dim: #00aa00;
+            --green-dark: #003300;
+            --cyan: #00ffff;
+            --yellow: #ffcc00;
+            --red: #ff3300;
+            --bg: #0a0a0a;
+            --surface: #111;
+            --surface2: #1a1a1a;
+            --border: #222;
+            --text: #cccccc;
+            --text-dim: #888;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 15px;
+            line-height: 1.75;
+        }
+
+        /* ── HEADER ── */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--green-dim);
+            padding: 40px 24px 32px;
+            text-align: center;
+        }
+        header h1 {
+            font-size: 2rem;
+            color: var(--green);
+            text-shadow: 0 0 12px #00ff0066;
+            letter-spacing: 4px;
+            margin-bottom: 8px;
+        }
+        header .subtitle {
+            color: var(--text-dim);
+            font-size: 0.88rem;
+            letter-spacing: 2px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 18px;
+            color: var(--green-dim);
+            text-decoration: none;
+            font-size: 0.82rem;
+            border: 1px solid var(--green-dark);
+            padding: 4px 12px;
+        }
+        .back-link:hover { border-color: var(--green); color: var(--green); }
+
+        /* ── LAYOUT ── */
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+
+        /* ── TOC ── */
+        nav.toc {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--green-dim);
+            padding: 20px 24px;
+            margin-bottom: 48px;
+        }
+        nav.toc h2 {
+            color: var(--green-dim);
+            font-size: 0.78rem;
+            letter-spacing: 3px;
+            margin-bottom: 12px;
+        }
+        nav.toc ol { padding-left: 18px; }
+        nav.toc li { margin-bottom: 4px; }
+        nav.toc a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.88rem;
+        }
+        nav.toc a:hover { color: var(--green); }
+
+        /* ── SECTIONS ── */
+        section { margin-bottom: 56px; }
+        section h2 {
+            color: var(--green);
+            font-size: 1.15rem;
+            letter-spacing: 2px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--green-dark);
+            margin-bottom: 20px;
+        }
+        section h3 {
+            color: var(--yellow);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            margin: 28px 0 10px;
+        }
+        p { margin-bottom: 14px; color: var(--text); }
+
+        /* ── CALLOUTS ── */
+        .callout {
+            border-left: 3px solid var(--green-dim);
+            background: var(--surface);
+            padding: 12px 16px;
+            margin: 20px 0;
+            font-size: 0.88rem;
+        }
+        .callout.cyan   { border-color: var(--cyan); }
+        .callout.yellow { border-color: var(--yellow); }
+        .callout.red    { border-color: var(--red); }
+        .callout strong { color: var(--green); }
+        .callout.cyan   strong { color: var(--cyan); }
+        .callout.yellow strong { color: var(--yellow); }
+        .callout.red    strong { color: var(--red); }
+
+        /* ── CODE BLOCKS ── */
+        pre {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            padding: 16px 18px;
+            overflow-x: auto;
+            margin: 16px 0;
+            font-size: 0.83rem;
+            line-height: 1.6;
+        }
+        code { color: var(--cyan); }
+        pre code { color: #b8e0b8; }
+
+        .kw  { color: #6699ee; }
+        .fn  { color: var(--yellow); }
+        .cm  { color: #556655; font-style: italic; }
+        .nm  { color: var(--cyan); }
+        .st  { color: #cc8844; }
+        .nu  { color: #dd88ff; }
+
+        /* ── MERMAID DIAGRAMS ── */
+        .mermaid-wrap {
+            background: var(--surface2);
+            border: 1px solid var(--green-dark);
+            padding: 20px 16px 32px;
+            margin: 20px 0;
+            overflow-x: auto;
+            display: flex;
+            justify-content: center;
+            position: relative;
+            cursor: zoom-in;
+            transition: border-color 0.15s;
+        }
+        .mermaid-wrap:hover {
+            border-color: var(--green-dim);
+        }
+        .mermaid-wrap .mermaid {
+            max-width: 100%;
+        }
+        .zoom-hint {
+            position: absolute;
+            bottom: 6px;
+            right: 10px;
+            font-size: 0.7rem;
+            color: var(--green-dark);
+            letter-spacing: 1px;
+            pointer-events: none;
+            transition: color 0.15s;
+        }
+        .mermaid-wrap:hover .zoom-hint {
+            color: var(--green-dim);
+        }
+
+        /* ── ZOOM MODAL ── */
+        .zoom-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.92);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            cursor: zoom-out;
+        }
+        .zoom-modal {
+            position: relative;
+            max-width: 95vw;
+            max-height: 92vh;
+            overflow: auto;
+            cursor: default;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .zoom-modal svg {
+            width: 90vw;
+            height: auto;
+            max-height: 88vh;
+            transform-origin: center center;
+            transition: transform 0.1s ease;
+        }
+        .zoom-close {
+            position: fixed;
+            top: 16px;
+            right: 20px;
+            background: var(--surface2);
+            border: 1px solid var(--green-dim);
+            color: var(--green);
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            padding: 4px 12px;
+            cursor: pointer;
+            letter-spacing: 2px;
+            z-index: 1001;
+        }
+        .zoom-close:hover {
+            background: var(--green-dark);
+        }
+        .zoom-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 1001;
+        }
+        .zoom-btn {
+            background: var(--surface2);
+            border: 1px solid var(--green-dim);
+            color: var(--green);
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .zoom-btn:hover { background: var(--green-dark); }
+        .zoom-scale-label {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            padding: 0 10px;
+            display: flex;
+            align-items: center;
+            min-width: 52px;
+            justify-content: center;
+        }
+
+        /* ── TABLES ── */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.86rem;
+        }
+        th {
+            background: var(--surface);
+            color: var(--green-dim);
+            text-align: left;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            letter-spacing: 1px;
+            font-size: 0.78rem;
+        }
+        td {
+            padding: 7px 12px;
+            border: 1px solid var(--border);
+            vertical-align: top;
+        }
+        tr:nth-child(even) td { background: var(--surface); }
+
+        /* ── TAGS ── */
+        .tag {
+            display: inline-block;
+            font-size: 0.72rem;
+            padding: 1px 7px;
+            border-radius: 2px;
+            margin-right: 6px;
+            vertical-align: middle;
+            letter-spacing: 1px;
+            background: #003300;
+            color: var(--green);
+            border: 1px solid var(--green-dark);
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-dim);
+            font-size: 0.78rem;
+            border-top: 1px solid var(--border);
+        }
+        footer a { color: var(--green-dim); text-decoration: none; }
+
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.3rem; }
+            .container { padding: 24px 14px 60px; }
+        }
+    </style>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                background: '#1a1a1a',
+                mainBkg: '#0d150d',
+                primaryColor: '#0d1a0d',
+                primaryBorderColor: '#005500',
+                primaryTextColor: '#00cc00',
+                lineColor: '#007700',
+                secondaryColor: '#111a11',
+                tertiaryColor: '#0d0d0d',
+                edgeLabelBackground: '#1a1a1a',
+                fontFamily: '"Courier New", Courier, monospace',
+                fontSize: '13px',
+                nodeBorder: '#005500',
+                clusterBkg: '#0a140a',
+                clusterBorder: '#004400',
+                titleColor: '#00ff00',
+                stateBkg: '#0d150d',
+                stateBorder: '#005500',
+                labelColor: '#00cc00',
+                labelBackground: '#1a1a1a',
+                errorBkgColor: '#1a0000',
+                errorTextColor: '#ff3300',
+            }
+        });
+    </script>
+</head>
+<body>
+
+<header>
+    <h1>CÓMO ESTÁ HECHO</h1>
+    <div class="subtitle">ARQUITECTURA TÉCNICA — LABERINTO RETRO 2.5D</div>
+    <a class="back-link" href="index.html">← VOLVER AL JUEGO</a>
+</header>
+
+<div class="container">
+
+    <nav class="toc">
+        <h2>CONTENIDO</h2>
+        <ol>
+            <li><a href="#vision">Visión general — ¿qué es 2.5D?</a></li>
+            <li><a href="#laberinto">Generación del laberinto (DFS recursivo)</a></li>
+            <li><a href="#salida">Colocación de la salida (BFS)</a></li>
+            <li><a href="#raycasting">El motor de renderizado (DDA Raycasting)</a></li>
+            <li><a href="#texturas">Texturas procedurales y buffer de píxeles</a></li>
+            <li><a href="#sprites">Renderizado de sprites (Z-Buffer)</a></li>
+            <li><a href="#ia">Inteligencia artificial de los enemigos</a></li>
+            <li><a href="#colisiones">Colisiones y movimiento (wall-sliding)</a></li>
+            <li><a href="#audio">Audio procedural (Web Audio API)</a></li>
+            <li><a href="#loop">El game loop</a></li>
+            <li><a href="#estado">Gestión de estado y temporizador</a></li>
+        </ol>
+    </nav>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section id="vision">
+        <h2>1. VISIÓN GENERAL — ¿QUÉ ES 2.5D?</h2>
+
+        <p>El juego usa una técnica llamada <strong>raycasting</strong>, popularizada por Wolfenstein 3D (1992) y Doom (1993). A pesar de que la pantalla muestra una perspectiva tridimensional convincente, el mundo interno es completamente <strong>plano</strong>: una matriz 2D de celdas que son o bien pared o bien camino.</p>
+
+        <p>La ilusión de profundidad se construye lanzando rayos desde la cámara del jugador, uno por cada columna de píxeles de la pantalla. Cuanto más lejos choca un rayo con una pared, más pequeña se dibuja esa columna. Es la misma proyección perspectiva que usa la visión humana.</p>
+
+        <div class="mermaid-wrap"><span class="zoom-hint">clic para ampliar</span>
+            <pre class="mermaid">
+flowchart LR
+    A["Mapa 2D\nMatriz de celdas\npared / camino"] -->|"640 rayos\nuno por columna de pantalla"| B["DDA Raycasting\ndistancia al impacto"]
+    B -->|"altura = ALTO / distancia"| C["Vista 3D\nColumnas proporcionales\na la distancia"]
+            </pre>
+        </div>
+
+        <div class="callout">
+            <strong>En términos simples:</strong> El truco es simple. Si lanzas 640 rayos (uno por pixel de ancho), y cada rayo te dice a qué distancia chocó con una pared, puedes calcular qué tan alta debe ser esa pared en pantalla: <code>altura = ALTO / distancia</code>. A mayor distancia, menor altura.
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section id="laberinto">
+        <h2>2. GENERACIÓN DEL LABERINTO — DFS RECURSIVO</h2>
+        <span class="tag">ALGORITMOS</span>
+
+        <p>Cada partida genera un laberinto distinto mediante el algoritmo de <strong>backtracking recursivo</strong> (también llamado "recursive DFS maze carver"). Es el algoritmo más común para laberintos perfectos: tiene exactamente un camino entre cualquier par de celdas, sin bucles ni áreas aisladas.</p>
+
+        <h3>¿Cómo funciona?</h3>
+
+        <p>El laberinto se representa en una grilla de tamaño <code>(2·F+1) × (2·C+1)</code>: las celdas impares son "habitaciones" y las celdas entre ellas son "muros derribables". Todo empieza como paredes (valor 1), y el algoritmo va abriendo pasos.</p>
+
+        <div class="mermaid-wrap"><span class="zoom-hint">clic para ampliar</span>
+            <pre class="mermaid">
+flowchart TD
+    A(["Inicio\ngrid = todo paredes\npila = 0,0"]) --> B["Tomar tope r, c"]
+    B --> C{"Hay vecinos\nno visitados?"}
+    C -->|"Si"| D["Elegir vecino\naleatoriamente"]
+    D --> E["Derribar muro\nentre r,c y vecino"]
+    E --> F["Marcar visitado\nApilar vecino"]
+    F --> B
+    C -->|"No"| G["Backtrack — pop"]
+    G --> H{"Pila\nvacia?"}
+    H -->|"No"| B
+    H -->|"Si"| I(["Laberinto completo"])
+            </pre>
+        </div>
+
+<pre><code><span class="kw">while</span> (pila.length > <span class="nu">0</span>) {
+    <span class="kw">const</span> [r, c] = pila[pila.length - <span class="nu">1</span>];
+    <span class="kw">const</span> vecinos = dirs
+        .<span class="fn">map</span>(d =&gt; ({ nr: r + d.dr, nc: c + d.dc, ... }))
+        .<span class="fn">filter</span>(v =&gt; v.nr &gt;= <span class="nu">0</span> &amp;&amp; v.nr &lt; filasCeldas &amp;&amp; !vis[v.nr][v.nc]);
+
+    <span class="kw">if</span> (vecinos.length &gt; <span class="nu">0</span>) {
+        <span class="kw">const</span> v = vecinos[<span class="fn">Math.floor</span>(<span class="fn">Math.random</span>() * vecinos.length)];
+        grid[r * <span class="nu">2</span> + <span class="nu">1</span> + v.dr][c * <span class="nu">2</span> + <span class="nu">1</span> + v.dc] = <span class="nu">0</span>; <span class="cm">// derriba el muro</span>
+        grid[v.nr * <span class="nu">2</span> + <span class="nu">1</span>][v.nc * <span class="nu">2</span> + <span class="nu">1</span>] = <span class="nu">0</span>;   <span class="cm">// abre la habitación</span>
+        vis[v.nr][v.nc] = <span class="kw">true</span>;
+        pila.<span class="fn">push</span>([v.nr, v.nc]);
+    } <span class="kw">else</span> {
+        pila.<span class="fn">pop</span>(); <span class="cm">// backtrack</span>
+    }
+}</code></pre>
+
+        <div class="callout cyan">
+            <strong>Profundizando:</strong> La implementación usa la versión iterativa con pila explícita en lugar de recursión real, evitando stack overflow en laberintos grandes. La complejidad es O(N) donde N = número de celdas lógicas, ya que cada celda se visita exactamente una vez. El factor <code>2·F+1</code> en la grilla es la codificación "de pared entre celdas": cada celda lógica ocupa la posición <code>(2r+1, 2c+1)</code> y sus muros compartidos están en las posiciones intermedias.
+        </div>
+
+        <h3>Variabilidad por nivel</h3>
+        <p>El tamaño del laberinto es aleatorio en cada partida. Se eligen entre 4–7 filas y 7–11 columnas de celdas lógicas, generando laberintos que van de pequeños y fáciles a grandes y laberínticos:</p>
+<pre><code><span class="kw">const</span> CELDAS_F = <span class="nu">4</span> + <span class="fn">Math.floor</span>(<span class="fn">Math.random</span>() * <span class="nu">4</span>);  <span class="cm">// 4..7</span>
+<span class="kw">const</span> CELDAS_C = <span class="nu">7</span> + <span class="fn">Math.floor</span>(<span class="fn">Math.random</span>() * <span class="nu">5</span>);  <span class="cm">// 7..11</span></code></pre>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section id="salida">
+        <h2>3. COLOCACIÓN DE LA SALIDA — BFS</h2>
+        <span class="tag">GRAFOS</span>
+
+        <p>Una vez generado el laberinto, el juego coloca la puerta de salida (cian pulsante) en el punto <strong>más lejano del spawn del jugador</strong>. No es una distancia euclidiana sino la distancia real a través de los pasillos del laberinto, calculada con <strong>BFS (Breadth-First Search)</strong>.</p>
+
+        <div class="mermaid-wrap"><span class="zoom-hint">clic para ampliar</span>
+            <pre class="mermaid">
+graph TD
+    S(["Spawn — dist 0"]):::spawn --> A1["dist 1"] & A2["dist 1"]
+    A1 --> B1["dist 2"]
+    A2 --> B2["dist 2"]
+    B1 --> C1["dist 3"]
+    B2 --> C2["dist 3"]
+    C2 --> D["dist 4"]
+    D --> E(["SALIDA — dist maxima"]):::exit
+
+    classDef spawn fill:#003300,stroke:#00ff00,color:#00ff00
+    classDef exit  fill:#003333,stroke:#00ffff,color:#00ffff
+            </pre>
+        </div>
+
+<pre><code><span class="kw">const</span> cola = [[<span class="nu">1</span>, <span class="nu">1</span>]];
+dist[<span class="nu">1</span>][<span class="nu">1</span>] = <span class="nu">0</span>;
+<span class="kw">let</span> cabeza = <span class="nu">0</span>;
+
+<span class="kw">while</span> (cabeza &lt; cola.length) {
+    <span class="kw">const</span> [f, c] = cola[cabeza++];   <span class="cm">// O(1) sin shift()</span>
+    <span class="kw">const</span> d = dist[f][c];
+
+    <span class="kw">if</span> ((f !== <span class="nu">1</span> || c !== <span class="nu">1</span>) &amp;&amp; laberinto.mapa[f][c].tipo === <span class="st">'camino'</span> &amp;&amp; d > maxDist) {
+        maxDist = d;
+        salidaF = f; salidaC = c;
+    }
+    <span class="cm">// explorar los 4 vecinos transitables...</span>
+}</code></pre>
+
+        <div class="callout yellow">
+            <strong>Detalle de implementación:</strong> Se usa un índice <code>cabeza</code> en lugar de <code>cola.shift()</code>. Esto es importante: <code>Array.shift()</code> en JavaScript es O(N) porque mueve todos los elementos. Con un puntero de lectura la cola opera en O(1) por elemento, haciendo la BFS total O(N).
+        </div>
+
+        <p>La celda de salida cambia su tipo de <code>'camino'</code> a <code>'salida'</code>, lo que hace que el sistema de spawn de enemigos e ítems la excluya automáticamente del pool de posiciones válidas.</p>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section id="raycasting">
+        <h2>4. EL MOTOR DE RENDERIZADO — DDA RAYCASTING</h2>
+        <span class="tag">MATEMÁTICAS</span>
+
+        <p>El corazón del motor es el algoritmo <strong>DDA (Digital Differential Analyzer)</strong>. Para cada columna de píxeles <code>x</code> se lanza un rayo con este ángulo:</p>
+
+<pre><code>anguloRayo = (jugador.angulo - FOV/2) + (x / ANCHO_3D) * FOV</code></pre>
+
+        <p>El FOV (campo de visión) es de 60° (<code>π/3</code> radianes), distribuidos uniformemente entre las 640 columnas.</p>
+
+        <h3>El algoritmo DDA</h3>
+        <p>DDA traversal avanza el rayo celda por celda de la grilla, siempre saltando a la siguiente intersección de línea de cuadrícula más cercana, sin importar si es vertical u horizontal. Es exacto (sin artefactos de sampling) y muy rápido.</p>
+
+        <div class="mermaid-wrap"><span class="zoom-hint">clic para ampliar</span>
+            <pre class="mermaid">
+flowchart TD
+    A["Calcular direccion del rayo\ndirX = cos angulo, dirY = sin angulo"] --> B["Calcular deltas\ndeltaDistX = 1 / dirX\ndeltaDistY = 1 / dirY"]
+    B --> C["Inicializar sideDistX y sideDistY\ncon distancia al primer borde"]
+    C --> D{"sideDistX\nmenor que\nsideDistY?"}
+    D -->|"Si"| E["sideDistX += deltaDistX\nmapX += stepX\nside = 0 — cara vertical"]
+    D -->|"No"| F["sideDistY += deltaDistY\nmapY += stepY\nside = 1 — cara horizontal"]
+    E --> G{"Celda actual\nes pared?"}
+    F --> G
+    G -->|"No"| D
+    G -->|"Si"| H["Calcular perpDist\nevita efecto ojo de pez"]
+    H --> I["altura = ALTO / perpDist"]
+            </pre>
+        </div>
+
+<pre><code><span class="kw">while</span> (!hit) {
+    <span class="kw">if</span> (sideDistX &lt; sideDistY) {
+        sideDistX += deltaDistX;  <span class="cm">// avanzar al siguiente borde vertical</span>
+        mapX += stepX;
+        side = <span class="nu">0</span>;
+    } <span class="kw">else</span> {
+        sideDistY += deltaDistY;  <span class="cm">// avanzar al siguiente borde horizontal</span>
+        mapY += stepY;
+        side = <span class="nu">1</span>;
+    }
+    <span class="kw">if</span> (tipoCelda === <span class="st">'pared'</span> || tipoCelda === <span class="st">'salida'</span>) hit = <span class="kw">true</span>;
+}</code></pre>
+
+        <h3>Distancia perpendicular vs. euclidiana</h3>
+        <p>Usar la distancia euclidiana al punto de impacto provoca el efecto "ojo de pez": las paredes a los lados aparecen más pequeñas de lo que deberían. La solución es usar la <strong>distancia perpendicular</strong> al plano de la cámara.</p>
+
+        <div class="mermaid-wrap"><span class="zoom-hint">clic para ampliar</span>
+            <pre class="mermaid">
+flowchart LR
+    subgraph wrong["Distancia euclidiana — ojo de pez"]
+        direction TB
+        W1["rayo izquierdo\ndistancia larga"] --> WR["paredes laterales\naparecen mas pequenas"]
+        W2["rayo central\ndistancia normal"] --> WR
+        W3["rayo derecho\ndistancia larga"] --> WR
+    end
+    subgraph correct["Distancia perpendicular — correcto"]
+        direction TB
+        P1["rayo izquierdo"] --> PR["misma pared =\nmisma altura en pantalla"]
+        P2["rayo central"] --> PR
+        P3["rayo derecho"] --> PR
+    end
+    wrong -->|"dist x cos angulo - anguloJugador"| correct
+            </pre>
+        </div>
+
+<pre><code><span class="kw">const</span> perpDist = side === <span class="nu">0</span>
+    ? (mapX - jugador.x + (<span class="nu">1</span> - stepX) / <span class="nu">2</span>) / dirX
+    : (mapY - jugador.y + (<span class="nu">1</span> - stepY) / <span class="nu">2</span>) / dirY;
+
+<span class="cm">// corrección para cada columna renderizada</span>
+<span class="kw">const</span> distancia = resultado.dist * <span class="fn">Math.cos</span>(anguloRayo - jugador.angulo);</code></pre>
+
+        <h3>Sombreado por distancia y cara</h3>
+        <p>Las paredes se oscurecen según la distancia (<em>fog</em>) y según si la cara impactada es norte/sur vs este/oeste, dando profundidad visual sin necesidad de iluminación real:</p>
+
+<pre><code><span class="kw">const</span> shade = <span class="fn">Math.min</span>(<span class="nu">0.94</span>, distancia / SHADE_DIVISOR + faceDarken);
+r = <span class="fn">Math.floor</span>(r * (<span class="nu">1</span> - shade));   <span class="cm">// oscurecer según distancia</span></code></pre>
+
+        <table>
+            <tr><th>Variable</th><th>Valor</th><th>Efecto</th></tr>
+            <tr><td><code>SHADE_DIVISOR</code></td><td>13</td><td>Controla qué tan rápido se oscurece con la distancia</td></tr>
+            <tr><td><code>FACE_DARKEN_FACTOR</code></td><td>0.18</td><td>Oscurece las caras norte/sur para dar sensación de luz direccional</td></tr>
+            <tr><td><code>RENDER_DIST</code></td><td>30</td><td>Rayos más largos se descartan (niebla máxima)</td></tr>
+        </table>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section id="texturas">
+        <h2>5. TEXTURAS PROCEDURALES Y BUFFER DE PÍXELES</h2>
+        <span class="tag">GRÁFICOS</span>
+
+        <p>No hay archivos de imagen. Las tres texturas (muro, techo, suelo) se generan <strong>programáticamente</strong> al inicio usando un canvas oculto, y sus datos de píxel se extraen de una sola vez con <code>getImageData()</code>. El acceso posterior es un simple índice en un <code>Uint8ClampedArray</code>.</p>
+
+<pre><code><span class="cm">// Una sola lectura al inicio...</span>
+<span class="kw">const</span> muroTexData = texturaMuro.<span class="fn">getContext</span>(<span class="st">'2d'</span>)
+    .<span class="fn">getImageData</span>(<span class="nu">0</span>, <span class="nu">0</span>, TEX_SIZE, TEX_SIZE).data;
+
+<span class="cm">// ...acceso O(1) durante el render, sin llamadas a la API del canvas</span>
+<span class="kw">const</span> texIdx = (texV * TEX_SIZE + texU) * <span class="nu">4</span>;
+buf[i]     = muroTexData[texIdx];     <span class="cm">// R</span>
+buf[i + <span class="nu">1</span>] = muroTexData[texIdx + <span class="nu">1</span>]; <span class="cm">// G</span>
+buf[i + <span class="nu">2</span>] = muroTexData[texIdx + <span class="nu">2</span>]; <span class="cm">// B</span></code></pre>
+
+        <p>El frame entero se construye escribiendo directamente en el array <code>buf</code> (el buffer de <code>ImageData</code>), y se sube al canvas en una sola llamada a <code>putImageData()</code> al final del render. Esto evita miles de <code>fillRect</code> individuales por frame.</p>
+
+        <div class="callout">
+            <strong>¿Por qué es importante?</strong> Cada llamada a la API 2D del canvas tiene overhead. Escribir directamente en el ImageData y hacer un único <code>putImageData</code> por frame es la técnica estándar para pixel pushing eficiente en canvas sin WebGL.
+        </div>
+
+        <h3>Coordenada de textura (u)</h3>
+        <p>Al impactar una pared, se calcula en qué fracción horizontal de la celda ocurrió el impacto. Este valor <code>u</code> (entre 0 y 1) se mapea a la columna de la textura:</p>
+
+<pre><code><span class="kw">let</span> wallX = side === <span class="nu">0</span>
+    ? jugador.y + perpDist * dirY   <span class="cm">// cara vertical: coordenada Y del impacto</span>
+    : jugador.x + perpDist * dirX;  <span class="cm">// cara horizontal: coordenada X del impacto</span>
+wallX -= <span class="fn">Math.floor</span>(wallX);         <span class="cm">// fracción decimal = offset dentro del ladrillo</span>
+
+<span class="kw">const</span> texU = <span class="fn">Math.floor</span>(wallX * TEX_SIZE); <span class="cm">// columna en la textura 64px</span></code></pre>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section id="sprites">
+        <h2>6. RENDERIZADO DE SPRITES — Z-BUFFER</h2>
+        <span class="tag">GRÁFICOS</span>
+
+        <p>Los enemigos y los ítems son sprites 2D proyectados en el espacio 3D. El problema central es el <strong>orden de dibujado</strong>: un sprite detrás de una pared no debe verse, y un sprite más cercano debe tapar a uno más lejano.</p>
+
+        <h3>El Z-Buffer</h3>
+        <p>Durante el render de paredes, se guarda la distancia perpendicular de cada columna en <code>zBuffer[x]</code>. Cuando se va a dibujar un píxel de sprite en la columna <code>x</code>, solo se dibuja si el sprite está más cerca que la pared registrada:</p>
+
+        <div class="mermaid-wrap"><span class="zoom-hint">clic para ampliar</span>
+            <pre class="mermaid">
+flowchart LR
+    A["Render de pared\ncolumna x"] --> B[/"zBuffer x = distPared"/]
+    B --> C["Render de sprite\ncolumna x"]
+    C --> D{"distSprite\nmenor que\nzBuffer x ?"}
+    D -->|"Si — sprite mas cerca"| E(["Dibujar pixel"]):::ok
+    D -->|"No — pared mas cerca"| F(["Omitir pixel"]):::skip
+
+    classDef ok   fill:#003300,stroke:#00ff00,color:#00ff00
+    classDef skip fill:#1a0000,stroke:#550000,color:#aa3300
+            </pre>
+        </div>
+
+<pre><code><span class="kw">if</span> (distCorr >= zBuffer[col]) <span class="kw">continue</span>; <span class="cm">// la pared tapa al sprite</span></code></pre>
+
+        <h3>Proyección del sprite</h3>
+        <p>Para saber dónde en pantalla aparece un sprite, se calcula el ángulo entre el jugador y el sprite, relativo a la dirección de visión del jugador:</p>
+
+<pre><code><span class="kw">let</span> deltaAngulo = <span class="fn">Math.atan2</span>(dy, dx) - jugador.angulo;
+<span class="cm">// normalizar a [-π, π]</span>
+<span class="kw">while</span> (deltaAngulo > Math.PI) deltaAngulo -= <span class="nu">2</span> * Math.PI;
+
+<span class="kw">const</span> xCentro = <span class="fn">Math.floor</span>((<span class="nu">0.5</span> + deltaAngulo / FOV) * ANCHO_3D);
+<span class="kw">const</span> altSprite = <span class="fn">Math.floor</span>(ALTO / distCorr);  <span class="cm">// más lejos = más pequeño</span></code></pre>
+
+        <h3>Personajes sin sprites de imagen</h3>
+        <p>Los enemigos se dibujan <strong>coloreando columnas individuales</strong>, definiendo zonas anatómicas (cabeza, torso, brazos, piernas, pies) con rangos en la coordenada de textura <code>tc</code>. No hay sprites bitmap, todo es geometría procedural:</p>
+
+<pre><code><span class="kw">const</span> hasHead = <span class="fn">Math.abs</span>(col - xCentro) &lt; headRadius;
+<span class="kw">const</span> hasBody = col >= bodyStartX &amp;&amp; col &lt; bodyEndX;
+<span class="kw">const</span> hasLeg  = (tc > <span class="nu">0.46</span> &amp;&amp; tc &lt; <span class="nu">0.50</span>) || (tc > <span class="nu">0.54</span> &amp;&amp; tc &lt; <span class="nu">0.58</span>);</code></pre>
+
+        <div class="callout cyan">
+            <strong>Orden de dibujado:</strong> Los sprites se ordenan de más lejano a más cercano antes de renderizar (<em>painter's algorithm</em>). El Z-buffer resuelve el caso de oclusión por paredes; el ordenamiento previo resuelve la oclusión entre sprites.
+        </div>
+
+        <h3>Reutilización del caché de rayos</h3>
+        <p>El minimapa necesita dibujar los rayos de visión. En lugar de lanzar todos los rayos dos veces, el render 3D guarda los resultados en <code>rayCache[]</code> y el minimapa los reutiliza directamente, sin costo adicional de cómputo.</p>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section id="ia">
+        <h2>7. INTELIGENCIA ARTIFICIAL DE LOS ENEMIGOS</h2>
+        <span class="tag">COMPORTAMIENTO</span>
+
+        <p>Cada enemigo tiene dos modos de comportamiento que se evalúan cada frame:</p>
+
+        <table>
+            <tr><th>Modo</th><th>Condición</th><th>Comportamiento</th></tr>
+            <tr><td><strong>Caza</strong></td><td>Jugador en rango (&lt;8 celdas) y línea de visión libre</td><td>Se mueve directamente hacia el jugador a velocidad mayor</td></tr>
+            <tr><td><strong>Patrulla</strong></td><td>Fuera de rango o sin visibilidad</td><td>Deambula por pasillos sin retroceder</td></tr>
+            <tr><td><strong>Ataque</strong></td><td>Distancia ≤ 1.2 unidades</td><td>Inflige daño al jugador en ciclos de cooldown</td></tr>
+        </table>
+
+        <h3>Línea de visión</h3>
+        <p>Para saber si el enemigo "ve" al jugador, se lanza un rayo lineal entre ambas posiciones y se verifica que no cruce ninguna pared. El muestreo se hace con 10 puntos por unidad de distancia:</p>
+
+<pre><code><span class="kw">function</span> <span class="fn">esLineaLibre</span>(x1, y1, x2, y2) {
+    <span class="kw">const</span> steps = <span class="fn">Math.max</span>(<span class="fn">Math.ceil</span>(<span class="fn">Math.abs</span>(dx) * <span class="nu">10</span>), <span class="fn">Math.ceil</span>(<span class="fn">Math.abs</span>(dy) * <span class="nu">10</span>), <span class="nu">4</span>);
+    <span class="kw">for</span> (<span class="kw">let</span> i = <span class="nu">1</span>; i &lt; steps; i++) {
+        <span class="kw">const</span> t = i / steps;
+        <span class="kw">const</span> cx = <span class="fn">Math.floor</span>(x1 + dx * t);
+        <span class="kw">const</span> cy = <span class="fn">Math.floor</span>(y1 + dy * t);
+        <span class="kw">if</span> (laberinto.mapa[cy][cx].tipo === <span class="st">'pared'</span>) <span class="kw">return false</span>;
+    }
+    <span class="kw">return true</span>;
+}</code></pre>
+
+        <h3>Deambulación sin retroceso</h3>
+        <p>En modo patrulla, el enemigo elige la siguiente celda adyacente aleatoriamente, con una restricción: no puede dar media vuelta inmediata. Esto evita que los enemigos vibren en el mismo sitio. Si no hay opciones sin retroceder, se permite la marcha atrás como fallback:</p>
+
+<pre><code><span class="cm">// Excluye la dirección opuesta a la última usada</span>
+<span class="kw">let</span> candidatos = dirs.<span class="fn">filter</span>(d =&gt;
+    !(d.dx === -e.lastDx &amp;&amp; d.dy === -e.lastDy) &amp;&amp; esCeldaValida(d)
+);
+
+<span class="kw">if</span> (candidatos.length === <span class="nu">0</span>) {
+    candidatos = dirs.<span class="fn">filter</span>(d =&gt; esCeldaValida(d)); <span class="cm">// fallback: permite retroceder</span>
+}</code></pre>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section id="colisiones">
+        <h2>8. COLISIONES Y MOVIMIENTO — WALL SLIDING</h2>
+        <span class="tag">FÍSICA</span>
+
+        <p>Una colisión simple "bloquea" al jugador completamente al tocar una pared. Esto se siente torpe porque el jugador no puede deslizarse a lo largo de la pared. La técnica <strong>wall sliding</strong> resuelve esto probando los ejes X e Y de forma independiente:</p>
+
+        <div class="mermaid-wrap"><span class="zoom-hint">clic para ampliar</span>
+            <pre class="mermaid">
+flowchart TD
+    A["Jugador presiona flecha arriba\nnx = x + cos·speed\nny = y + sin·speed"] --> B{"nx es\ncamino libre?"}
+    B -->|"Si"| C["x = nx"]
+    B -->|"No"| D["x sin cambio"]
+    C --> E{"ny es\ncamino libre?"}
+    D --> E
+    E -->|"Si"| F["y = ny"]
+    E -->|"No"| G["y sin cambio"]
+    F --> H(["Posicion final\nse desliza por la pared"])
+    G --> H
+            </pre>
+        </div>
+
+<pre><code><span class="kw">const</span> r = PLAYER_COLLISION_RADIUS; <span class="cm">// 0.2 — radio del jugador</span>
+
+<span class="cm">// Intenta mover en X solo</span>
+<span class="kw">if</span> (<span class="fn">esCamino</span>(nx + r, y + r) &amp;&amp; <span class="fn">esCamino</span>(nx - r, y + r) &amp;&amp;
+    <span class="fn">esCamino</span>(nx + r, y - r) &amp;&amp; <span class="fn">esCamino</span>(nx - r, y - r)) {
+    x = nx;
+}
+<span class="cm">// Intenta mover en Y solo (independiente del resultado anterior)</span>
+<span class="kw">if</span> (<span class="fn">esCamino</span>(x + r, ny + r) &amp;&amp; <span class="fn">esCamino</span>(x - r, ny + r) &amp;&amp;
+    <span class="fn">esCamino</span>(x + r, ny - r) &amp;&amp; <span class="fn">esCamino</span>(x - r, ny - r)) {
+    y = ny;
+}</code></pre>
+
+        <p>El radio del jugador se verifica en las 4 esquinas de su caja de colisión (no solo en su centro), lo que evita que atraviese esquinas de paredes.</p>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section id="audio">
+        <h2>9. AUDIO PROCEDURAL — WEB AUDIO API</h2>
+        <span class="tag">AUDIO</span>
+
+        <p>No hay archivos de audio. Todos los sonidos se sintetizan en tiempo real usando <strong>Web Audio API</strong>, combinando osciladores con distintas formas de onda y envolventes de amplitud (ADSR simplificado).</p>
+
+        <table>
+            <tr><th>Sonido</th><th>Forma de onda</th><th>Efecto</th></tr>
+            <tr><td>Disparo</td><td>Sawtooth</td><td>Pitch baja de 180Hz a 60Hz en 120ms — típico "pum" retro</td></tr>
+            <tr><td>Impacto</td><td>Square</td><td>Pitch baja de 440Hz a 120Hz — confirmación de hit</td></tr>
+            <tr><td>Daño recibido</td><td>Sawtooth</td><td>Frecuencia baja (120→50Hz), más fuerte — sensación de golpe</td></tr>
+            <tr><td>Pickup salud</td><td>Sine</td><td>Tres notas ascendentes 440→660→880 — jingle positivo</td></tr>
+            <tr><td>Pickup arma</td><td>Square</td><td>Cuatro notas 200→400→600→800 — "power up"</td></tr>
+        </table>
+
+<pre><code><span class="kw">function</span> <span class="fn">playShoot</span>() {
+    <span class="kw">const</span> t = audioCtx.currentTime;
+    <span class="kw">const</span> osc  = audioCtx.<span class="fn">createOscillator</span>();
+    <span class="kw">const</span> gain = audioCtx.<span class="fn">createGain</span>();
+
+    osc.type = <span class="st">'sawtooth'</span>;
+    osc.frequency.<span class="fn">setValueAtTime</span>(<span class="nu">180</span>, t);
+    osc.frequency.<span class="fn">exponentialRampToValueAtTime</span>(<span class="nu">60</span>, t + <span class="nu">0.12</span>);
+    gain.gain.<span class="fn">setValueAtTime</span>(<span class="nu">0.25</span>, t);
+    gain.gain.<span class="fn">exponentialRampToValueAtTime</span>(<span class="nu">0.001</span>, t + <span class="nu">0.15</span>);
+
+    osc.<span class="fn">connect</span>(gain).<span class="fn">connect</span>(audioCtx.destination);
+    osc.<span class="fn">start</span>(t); osc.<span class="fn">stop</span>(t + <span class="nu">0.15</span>);
+}</code></pre>
+
+        <div class="callout yellow">
+            <strong>AudioContext y política de autoplay:</strong> Los navegadores modernos bloquean el audio hasta que el usuario interactúa con la página. Por eso el <code>AudioContext</code> se crea en la primera acción del usuario (primer disparo, primer movimiento) y si está suspendido se reactiva con <code>audioCtx.resume()</code>.
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section id="loop">
+        <h2>10. EL GAME LOOP</h2>
+        <span class="tag">ARQUITECTURA</span>
+
+        <p>El motor usa <code>requestAnimationFrame</code> (rAF), el estándar para animaciones en el navegador. rAF sincroniza el loop con la tasa de refresco del monitor (típicamente 60fps) y pausa automáticamente cuando la pestaña no es visible, ahorrando CPU.</p>
+
+        <div class="mermaid-wrap"><span class="zoom-hint">clic para ampliar</span>
+            <pre class="mermaid">
+flowchart LR
+    RAF(["requestAnimationFrame"]) --> T["Decrementar timers\ndisparo · flash · hit · ataque"]
+    T --> L["Logica de juego\nmovimiento · IA · pickups · victoria"]
+    L --> R["Render\n3D → sprites → mira → HUD → minimapa"]
+    R --> RAF
+            </pre>
+        </div>
+
+<pre><code><span class="kw">function</span> <span class="fn">buclePrincipal</span>() {
+    <span class="kw">if</span> (cooldownDisparo > <span class="nu">0</span>) cooldownDisparo--;
+
+    <span class="fn">procesarMovimiento</span>();
+    <span class="fn">actualizarEnemigos</span>();
+    <span class="fn">verificarPickups</span>();
+    <span class="fn">verificarVictoria</span>();
+    <span class="fn">gestionarTemporizador</span>();
+
+    <span class="fn">renderizar3D</span>();
+    <span class="fn">renderizarEnemigos</span>();
+    <span class="fn">renderizarItems</span>();
+    <span class="fn">renderizarMira</span>();
+    <span class="fn">renderizarHUD</span>();
+    <span class="fn">renderizarMinimapa</span>();
+
+    <span class="fn">requestAnimationFrame</span>(buclePrincipal);
+}</code></pre>
+
+        <div class="callout">
+            <strong>Timers en frames, no en milisegundos:</strong> Valores como <code>COOLDOWN_DISPARO = 22</code> o <code>MUZZLE_FLASH_DURATION = 4</code> están en <em>frames</em>, no en milisegundos. Esto significa que a 60fps el flash de disparo dura 4/60 ≈ 66ms. Es una simplificación que funciona bien en hardware típico pero haría los cooldowns más lentos en monitores de 30fps.
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section id="estado">
+        <h2>11. GESTIÓN DE ESTADO Y TEMPORIZADOR DE BÚSQUEDA</h2>
+        <span class="tag">LÓGICA DE JUEGO</span>
+
+        <p>La condición de victoria no es matar a todos los enemigos, sino <strong>encontrar y pisar la puerta de salida</strong>. Matar a todos los enemigos inicia un temporizador de 30 segundos durante el que el jugador debe localizar la salida. Si no lo logra, los enemigos reaparecen.</p>
+
+        <div class="mermaid-wrap"><span class="zoom-hint">clic para ampliar</span>
+            <pre class="mermaid">
+stateDiagram-v2
+    [*] --> ConEnemigos : inicializar
+    ConEnemigos : Enemigos activos
+    ConEnemigos --> Temporizador : ultimo enemigo muerto
+    ConEnemigos --> Muerte : HP llega a 0
+    Temporizador : Cuenta atras 30 segundos
+    Temporizador --> Victoria : jugador pisa la salida
+    Temporizador --> ConEnemigos : tiempo agotado — reaparecen
+    Victoria : Nivel completado
+    Muerte : Has muerto
+    Victoria --> [*]
+    Muerte --> [*]
+            </pre>
+        </div>
+
+<pre><code><span class="kw">function</span> <span class="fn">gestionarTemporizador</span>() {
+    <span class="kw">if</span> (nivelCompletado || gameOver) <span class="kw">return</span>;
+
+    <span class="cm">// Arrancar cuenta atrás cuando el mapa queda sin enemigos</span>
+    <span class="kw">if</span> (enemigos.length === <span class="nu">0</span> &amp;&amp; !temporizadorActivo) {
+        temporizadorActivo = <span class="kw">true</span>;
+        temporizadorFinMs = <span class="fn">performance.now</span>() + TIEMPO_BUSQUEDA_MS;
+        <span class="kw">return</span>;
+    }
+
+    <span class="cm">// Hacer reaparecer enemigos cuando expira</span>
+    <span class="kw">if</span> (temporizadorActivo &amp;&amp; <span class="fn">performance.now</span>() >= temporizadorFinMs) {
+        <span class="fn">reaparecerEnemigos</span>(numEnemigosInicial);
+        temporizadorActivo = <span class="kw">false</span>;
+    }
+}</code></pre>
+
+        <div class="callout cyan">
+            <strong>performance.now() vs. frames:</strong> El temporizador usa <code>performance.now()</code> (tiempo real en milisegundos con alta resolución) en lugar de contar frames. Así los 30 segundos son siempre 30 segundos reales, independientemente de si el juego corre a 60fps o a 30fps.
+        </div>
+
+        <h3>Spawn seguro con Fisher-Yates</h3>
+        <p>Tanto los enemigos como los ítems aparecen en celdas aleatorias, pero nunca cerca del jugador (mínimo 3 unidades de distancia). El pool de celdas válidas se baraja con <strong>Fisher-Yates</strong>, el único algoritmo de barajado verdaderamente uniforme en O(N):</p>
+
+<pre><code><span class="kw">for</span> (<span class="kw">let</span> i = resultado.length - <span class="nu">1</span>; i > <span class="nu">0</span>; i--) {
+    <span class="kw">const</span> j = <span class="fn">Math.floor</span>(<span class="fn">Math.random</span>() * (i + <span class="nu">1</span>));
+    [resultado[i], resultado[j]] = [resultado[j], resultado[i]]; <span class="cm">// swap</span>
+}</code></pre>
+
+        <div class="callout red">
+            <strong>¿Por qué no <code>.sort(() =&gt; Math.random() - 0.5)</code>?</strong> Ese truco produce distribuciones no uniformes porque el comparador de sort no es transitivo cuando los valores son aleatorios. Fisher-Yates garantiza que cada permutación tiene la misma probabilidad de ocurrir.
+        </div>
+    </section>
+
+</div>
+
+<footer>
+    <a href="index.html">← JUGAR</a>
+    &nbsp;·&nbsp;
+    Laberinto Retro 2.5D — Motor escrito en JavaScript puro, sin librerías
+</footer>
+
+<script>
+    (function () {
+        let currentScale = 1;
+        let modalSvg = null;
+
+        function openZoom(wrap) {
+            const svg = wrap.querySelector('svg');
+            if (!svg) return;
+
+            currentScale = 1;
+            const clone = svg.cloneNode(true);
+            clone.style.transform = 'scale(1)';
+
+            const overlay = document.createElement('div');
+            overlay.className = 'zoom-overlay';
+
+            const modal = document.createElement('div');
+            modal.className = 'zoom-modal';
+            modal.appendChild(clone);
+            modalSvg = clone;
+
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'zoom-close';
+            closeBtn.textContent = 'ESC — CERRAR';
+
+            const controls = document.createElement('div');
+            controls.className = 'zoom-controls';
+
+            const btnMinus = document.createElement('button');
+            btnMinus.className = 'zoom-btn';
+            btnMinus.textContent = '−';
+
+            const label = document.createElement('div');
+            label.className = 'zoom-scale-label';
+            label.textContent = '100%';
+
+            const btnPlus = document.createElement('button');
+            btnPlus.className = 'zoom-btn';
+            btnPlus.textContent = '+';
+
+            const btnReset = document.createElement('button');
+            btnReset.className = 'zoom-btn';
+            btnReset.textContent = '⊙';
+            btnReset.title = 'Restablecer';
+
+            controls.append(btnMinus, label, btnPlus, btnReset);
+            overlay.append(modal, closeBtn, controls);
+            document.body.appendChild(overlay);
+
+            function updateScale(delta) {
+                currentScale = Math.min(5, Math.max(0.3, currentScale + delta));
+                clone.style.transform = `scale(${currentScale})`;
+                label.textContent = Math.round(currentScale * 100) + '%';
+            }
+
+            function close() {
+                overlay.remove();
+                document.removeEventListener('keydown', keyHandler);
+                modalSvg = null;
+            }
+
+            function keyHandler(e) {
+                if (e.key === 'Escape') close();
+                if (e.key === '+' || e.key === '=') updateScale(0.2);
+                if (e.key === '-') updateScale(-0.2);
+                if (e.key === '0') { currentScale = 1; clone.style.transform = 'scale(1)'; label.textContent = '100%'; }
+            }
+
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+            closeBtn.addEventListener('click', close);
+            btnPlus.addEventListener('click', (e) => { e.stopPropagation(); updateScale(0.2); });
+            btnMinus.addEventListener('click', (e) => { e.stopPropagation(); updateScale(-0.2); });
+            btnReset.addEventListener('click', (e) => { e.stopPropagation(); currentScale = 1; clone.style.transform = 'scale(1)'; label.textContent = '100%'; });
+
+            modal.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                updateScale(e.deltaY < 0 ? 0.15 : -0.15);
+            }, { passive: false });
+
+            document.addEventListener('keydown', keyHandler);
+        }
+
+        // Attach after mermaid renders
+        function attachZoom() {
+            document.querySelectorAll('.mermaid-wrap').forEach(wrap => {
+                wrap.addEventListener('click', () => openZoom(wrap));
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => setTimeout(attachZoom, 800));
+        } else {
+            setTimeout(attachZoom, 800);
+        }
+    })();
+</script>
+</body>
+</html>
